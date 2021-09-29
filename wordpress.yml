@@ -7,12 +7,58 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  creationTimestamp: "2021-09-29T16:41:10Z"
+  creationTimestamp: "2021-09-29T20:24:30Z"
   labels:
-    app: wordpress-pod
-  name: wordpress-pod
+    app: wordpress-demo
+  name: wordpress-demo
 spec:
   containers:
+  - args:
+    - mysqld
+    command:
+    - docker-entrypoint.sh
+    env:
+    - name: PATH
+      value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    - name: TERM
+      value: xterm
+    - name: container
+      value: podman
+    - name: MYSQL_MAJOR
+      value: "5.7"
+    - name: MYSQL_VERSION
+      value: 5.7.35-1debian10
+    - name: MYSQL_DATABASE
+      value: wordpress
+    - name: MYSQL_USER
+      value: wordpress
+    - name: MYSQL_PASSWORD
+      value: wordpress
+    - name: GOSU_VERSION
+      value: "1.12"
+    - name: MYSQL_ROOT_PASSWORD
+      value: somewordpress
+    image: docker.io/library/mysql:5.7
+    name: wordpress-demodb1
+    ports:
+    - containerPort: 80
+      hostPort: 8000
+      protocol: TCP
+    resources: {}
+    securityContext:
+      allowPrivilegeEscalation: true
+      capabilities:
+        drop:
+        - CAP_MKNOD
+        - CAP_NET_RAW
+        - CAP_AUDIT_WRITE
+      privileged: false
+      readOnlyRootFilesystem: false
+      seLinuxOptions: {}
+    volumeMounts:
+    - mountPath: /var/lib/mysql
+      name: srv-containers-mysql-host-0
+    workingDir: /
   - args:
     - apache2-foreground
     command:
@@ -24,44 +70,45 @@ spec:
       value: xterm
     - name: container
       value: podman
-    - name: PHP_CFLAGS
-      value: -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
-    - name: PHP_LDFLAGS
-      value: -Wl,-O1 -pie
-    - name: PHP_INI_DIR
-      value: /usr/local/etc/php
-    - name: PHP_VERSION
-      value: 7.4.24
+    - name: APACHE_CONFDIR
+      value: /etc/apache2
     - name: PHP_EXTRA_CONFIGURE_ARGS
       value: --with-apxs2 --disable-cgi
+    - name: WORDPRESS_DB_USER
+      value: wordpress
+    - name: PHP_EXTRA_BUILD_DEPS
+      value: apache2-dev
+    - name: APACHE_ENVVARS
+      value: /etc/apache2/envvars
+    - name: PHP_VERSION
+      value: 7.4.24
     - name: PHP_ASC_URL
       value: https://www.php.net/distributions/php-7.4.24.tar.xz.asc
-    - name: GPG_KEYS
-      value: 42670A7FE4D0441C8E4632349E4FDC074A4EF02D 5A52880781F755608BF815FC910DEB46F53EA312
+    - name: PHP_INI_DIR
+      value: /usr/local/etc/php
+    - name: PHP_SHA256
+      value: ff7658ee2f6d8af05b48c21146af5f502e121def4e76e862df5ec9fa06e98734
+    - name: PHP_CFLAGS
+      value: -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
     - name: PHP_URL
       value: https://www.php.net/distributions/php-7.4.24.tar.xz
-    - name: PHP_CPPFLAGS
-      value: -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+    - name: GPG_KEYS
+      value: 42670A7FE4D0441C8E4632349E4FDC074A4EF02D 5A52880781F755608BF815FC910DEB46F53EA312
+    - name: WORDPRESS_DB_HOST
+      value: db:3306
+    - name: WORDPRESS_DB_PASSWORD
+      value: wordpress
+    - name: WORDPRESS_DB_NAME
+      value: wordpress
+    - name: PHP_LDFLAGS
+      value: -Wl,-O1 -pie
     - name: PHPIZE_DEPS
       value: "autoconf \t\tdpkg-dev \t\tfile \t\tg++ \t\tgcc \t\tlibc-dev \t\tmake
         \t\tpkg-config \t\tre2c"
-    - name: PHP_SHA256
-      value: ff7658ee2f6d8af05b48c21146af5f502e121def4e76e862df5ec9fa06e98734
-    - name: PHP_EXTRA_BUILD_DEPS
-      value: apache2-dev
-    - name: APACHE_CONFDIR
-      value: /etc/apache2
-    - name: APACHE_ENVVARS
-      value: /etc/apache2/envvars
+    - name: PHP_CPPFLAGS
+      value: -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
     image: docker.io/library/wordpress:latest
-    name: wordpress
-    ports:
-    - containerPort: 80
-      hostPort: 8080
-      protocol: TCP
-    - containerPort: 3306
-      hostPort: 3306
-      protocol: TCP
+    name: wordpress-demowordpress1
     resources: {}
     securityContext:
       allowPrivilegeEscalation: true
@@ -77,51 +124,15 @@ spec:
     - mountPath: /var/www/html
       name: srv-containers-wordpress-host-0
     workingDir: /var/www/html
-  - args:
-    - mysqld
-    command:
-    - docker-entrypoint.sh
-    env:
-    - name: PATH
-      value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-    - name: TERM
-      value: xterm
-    - name: container
-      value: podman
-    - name: GOSU_VERSION
-      value: "1.13"
-    - name: MARIADB_MAJOR
-      value: "10.6"
-    - name: MARIADB_VERSION
-      value: 1:10.6.4+maria~focal
-    - name: MARIADB_ROOT_PASSWORD
-      value: JimmyKimmel
-    image: docker.io/library/mariadb:latest
-    name: mariaDB
-    resources: {}
-    securityContext:
-      allowPrivilegeEscalation: true
-      capabilities:
-        drop:
-        - CAP_MKNOD
-        - CAP_NET_RAW
-        - CAP_AUDIT_WRITE
-      privileged: false
-      readOnlyRootFilesystem: false
-      seLinuxOptions: {}
-    volumeMounts:
-    - mountPath: /var/lib/mysql
-      name: srv-containers-mariadb-host-0
-    workingDir: /
   dnsConfig: {}
-  restartPolicy: Never
+  restartPolicy: Always
   volumes:
+  - hostPath:
+      path: /srv/containers/mysql
+      type: Directory
+    name: srv-containers-mysql-host-0
   - hostPath:
       path: /srv/containers/wordpress
       type: Directory
     name: srv-containers-wordpress-host-0
-  - hostPath:
-      path: /srv/containers/mariadb
-      type: Directory
-    name: srv-containers-mariadb-host-0
 status: {}
